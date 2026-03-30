@@ -24,5 +24,5 @@ public class ExpenseResponseDTO {
     private String notes;
     private String imageFileName;
     private LocalDateTime createdAt;
-    private List<ExpenseDTOs.ExpenseItemDTO> items;
+    private List<ExpenseItemDTO> items;
 }

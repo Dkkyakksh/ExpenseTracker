@@ -1,7 +1,7 @@
 package com.expensetracker.service;
 
 import com.expensetracker.dto.*;
-import com.expensetracker.dto.ExpenseDTOs.*;
+import com.expensetracker.exception.AppExceptions.ExpenseNotFoundException;
 import com.expensetracker.model.Expense;
 import com.expensetracker.model.ExpenseItem;
 import com.expensetracker.repository.ExpenseRepository;
@@ -216,6 +216,6 @@ public class ExpenseService {
 
     private Expense findExpenseById(Long id) {
         return expenseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Expense not found with id: " + id));
+                .orElseThrow(() -> new ExpenseNotFoundException(id));
     }
 }

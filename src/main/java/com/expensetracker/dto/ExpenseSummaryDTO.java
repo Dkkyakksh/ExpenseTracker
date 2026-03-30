@@ -13,6 +13,6 @@ import java.util.List;
 public class ExpenseSummaryDTO {
     private BigDecimal totalSpend;
     private long totalExpenses;
-    private List<ExpenseDTOs.CategorySummaryDTO> byCategory;
-    private List<ExpenseDTOs.MerchantSummaryDTO> byMerchant;
+    private List<CategorySummaryDTO> byCategory;
+    private List<MerchantSummaryDTO> byMerchant;
 }
