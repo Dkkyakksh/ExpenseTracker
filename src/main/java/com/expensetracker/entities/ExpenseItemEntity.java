@@ -1,4 +1,4 @@
-package com.expensetracker.model;
+package com.expensetracker.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ExpenseItem {
+public class ExpenseItemEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,7 +20,7 @@ public class ExpenseItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "expense_id", nullable = false)
-    private Expense expense;
+    private ExpenseEntity expense;
 
     @Column(nullable = false)
     private String name;

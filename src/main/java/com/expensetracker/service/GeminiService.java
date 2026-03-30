@@ -37,9 +37,9 @@ public class GeminiService {
             {
               "merchantName": "Name of the store/restaurant/service",
               "category": "One of: Food & Dining, Groceries, Transport, Shopping, Entertainment, Health, Utilities, Travel, Other",
-              "totalAmount": 99.99,
-              "taxAmount": 5.00,
-              "currency": "USD",
+              "totalAmount": 100,
+              "taxAmount": 5,
+              "currency": "INR",
               "expenseDate": "YYYY-MM-DD",
               "paymentMethod": "Cash/Credit Card/Debit Card/UPI/Other",
               "items": [

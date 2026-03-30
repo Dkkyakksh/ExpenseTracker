@@ -28,8 +28,6 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
 
-    // ─── Receipt Image Upload ──────────────────────────────────────────────────
-
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ExpenseResponseDTO>> uploadReceipt(
             @RequestParam("file") MultipartFile file) throws Exception {

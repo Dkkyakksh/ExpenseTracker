@@ -1,4 +1,4 @@
-package com.expensetracker.model;
+package com.expensetracker.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Expense {
+public class ExpenseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,5 +61,5 @@ public class Expense {
 
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<ExpenseItem> items = new ArrayList<>();
+    private List<ExpenseItemEntity> items = new ArrayList<>();
 }

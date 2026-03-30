@@ -2,8 +2,8 @@ package com.expensetracker.service;
 
 import com.expensetracker.dto.*;
 import com.expensetracker.exception.AppExceptions.ExpenseNotFoundException;
-import com.expensetracker.model.Expense;
-import com.expensetracker.model.ExpenseItem;
+import com.expensetracker.entities.ExpenseEntity;
+import com.expensetracker.entities.ExpenseItemEntity;
 import com.expensetracker.repository.ExpenseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,12 +37,12 @@ public class ExpenseService {
         log.info("Gemini parsed merchant: {}, total: {}", parsed.getMerchantName(), parsed.getTotalAmount());
 
         // 2. Map parsed data to Expense entity
-        Expense expense = mapParsedToExpense(parsed, imageFile.getOriginalFilename());
+        ExpenseEntity expense = mapParsedToExpense(parsed, imageFile.getOriginalFilename());
 
         // 3. Map line items
         if (parsed.getItems() != null) {
-            List<ExpenseItem> items = parsed.getItems().stream()
-                    .map(i -> ExpenseItem.builder()
+            List<ExpenseItemEntity> items = parsed.getItems().stream()
+                    .map(i -> ExpenseItemEntity.builder()
                             .expense(expense)
                             .name(i.getName())
                             .quantity(i.getQuantity())
@@ -54,7 +54,7 @@ public class ExpenseService {
         }
 
         // 4. Save to database
-        Expense saved = expenseRepository.save(expense);
+        ExpenseEntity saved = expenseRepository.save(expense);
         log.info("Saved expense with id: {}", saved.getId());
 
         return toResponseDTO(saved);
@@ -72,13 +72,13 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public ExpenseResponseDTO getExpenseById(Long id) {
-        Expense expense = findExpenseById(id);
+        ExpenseEntity expense = findExpenseById(id);
         return toResponseDTO(expense);
     }
 
     @Transactional
     public ExpenseResponseDTO updateExpense(Long id, ExpenseUpdateRequestDTO request) {
-        Expense expense = findExpenseById(id);
+        ExpenseEntity expense = findExpenseById(id);
 
         if (request.getMerchantName() != null) expense.setMerchantName(request.getMerchantName());
         if (request.getCategory() != null) expense.setCategory(request.getCategory());
@@ -94,7 +94,7 @@ public class ExpenseService {
 
     @Transactional
     public void deleteExpense(Long id) {
-        Expense expense = findExpenseById(id);
+        ExpenseEntity expense = findExpenseById(id);
         expenseRepository.delete(expense);
         log.info("Deleted expense id: {}", id);
     }
@@ -163,8 +163,8 @@ public class ExpenseService {
 
     // ─── Mapping Helpers ──────────────────────────────────────────────────────
 
-    private Expense mapParsedToExpense(GeminiParsedExpense parsed, String fileName) {
-        return Expense.builder()
+    private ExpenseEntity mapParsedToExpense(GeminiParsedExpense parsed, String fileName) {
+        return ExpenseEntity.builder()
                 .merchantName(parsed.getMerchantName() != null ? parsed.getMerchantName() : "Unknown Merchant")
                 .category(parsed.getCategory())
                 .totalAmount(parsed.getTotalAmount() != null ? parsed.getTotalAmount() : BigDecimal.ZERO)
@@ -177,7 +177,7 @@ public class ExpenseService {
                 .build();
     }
 
-    private ExpenseResponseDTO toResponseDTO(Expense expense) {
+    private ExpenseResponseDTO toResponseDTO(ExpenseEntity expense) {
         List<ExpenseItemDTO> itemDTOs = expense.getItems().stream()
                 .map(i -> ExpenseItemDTO.builder()
                         .id(i.getId())
@@ -214,7 +214,7 @@ public class ExpenseService {
         }
     }
 
-    private Expense findExpenseById(Long id) {
+    private ExpenseEntity findExpenseById(Long id) {
         return expenseRepository.findById(id)
                 .orElseThrow(() -> new ExpenseNotFoundException(id));
     }
