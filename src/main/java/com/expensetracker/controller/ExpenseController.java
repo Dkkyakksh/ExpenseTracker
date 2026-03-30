@@ -45,9 +45,6 @@ public class ExpenseController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok("Receipt parsed and saved successfully", expense));
     }
-
-    // ─── CRUD Endpoints ───────────────────────────────────────────────────────
-
     @GetMapping
     public ResponseEntity<ApiResponse<List<ExpenseResponseDTO>>> getAllExpenses() {
         return ResponseEntity.ok(ApiResponse.ok(expenseService.getAllExpenses()));

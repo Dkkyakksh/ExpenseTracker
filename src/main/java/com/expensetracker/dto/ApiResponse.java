@@ -3,7 +3,7 @@ package com.expensetracker.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -20,7 +20,7 @@ public class ApiResponse<T> {
         this.message = message;
         this.data = data;
         this.errorCode = errorCode;
-        this.timestamp = LocalDateTime.now().toString();
+        this.timestamp = Instant.now().toString(); // ISO-8601 UTC e.g. 2026-03-31T10:15:30Z
     }
 
     public static <T> ApiResponse<T> ok(T data) {
