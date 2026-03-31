@@ -40,4 +40,8 @@ public interface ExpenseRepository extends JpaRepository<ExpenseEntity, Long> {
     List<String> findAllDistinctCategories();
 
     List<ExpenseEntity> findAllByOrderByExpenseDateDesc();
+
+    // Sum expenses for a given calendar month
+    @Query("SELECT COALESCE(SUM(e.totalAmount), 0) FROM ExpenseEntity e WHERE e.expenseDate BETWEEN :start AND :end")
+    BigDecimal sumExpensesForMonth(@Param("start") LocalDate start, @Param("end") LocalDate end);
 }
