@@ -190,12 +190,6 @@ public class GeminiService {
     }
 
     private String resolveMimeType(String contentType) {
-        if (contentType == null) return "image/jpeg";
-        return switch (contentType.toLowerCase()) {
-            case "image/png" -> "image/png";
-            case "image/gif" -> "image/gif";
-            case "image/webp" -> "image/webp";
-            default -> "image/jpeg";
-        };
+        return Objects.nonNull(contentType) ? contentType.toLowerCase() : "image/jpeg";
     }
 }

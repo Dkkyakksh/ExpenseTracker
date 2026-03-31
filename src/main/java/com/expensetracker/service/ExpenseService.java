@@ -186,7 +186,7 @@ public class ExpenseService {
 
     private ExpenseEntity mapParsedToExpense(GeminiParsedExpense parsed, String fileName) {
         return ExpenseEntity.builder()
-                .merchantName(parsed.getMerchantName() != null ? normalize(parsed.getMerchantName()) : "Unknown Merchant")
+                .merchantName(parsed.getMerchantName() != null ? normalize(parsed.getMerchantName()) : "unknown")
                 .category(normalize(parsed.getCategory()))
                 .totalAmount(parsed.getTotalAmount() != null ? parsed.getTotalAmount() : BigDecimal.ZERO)
                 .taxAmount(parsed.getTaxAmount())
