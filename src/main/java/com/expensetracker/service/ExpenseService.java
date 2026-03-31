@@ -169,16 +169,21 @@ public class ExpenseService {
         BigDecimal total = expenseRepository.sumTotalAmountsBetweenDates(startDate, endDate);
         List<ExpenseResponseDTO> expenses = getExpensesByDateRange(startDate, endDate);
 
-        List<CategorySummaryDTO> byCategory = expenseRepository.sumAmountGroupedByCategory()
+        List<CategorySummaryDTO> byCategory = expenseRepository.sumAmountGroupedByCategoryBetweenDates(startDate, endDate)
                 .stream()
                 .map(row -> new CategorySummaryDTO((String) row[0], (BigDecimal) row[1]))
+                .collect(Collectors.toList());
+
+        List<MerchantSummaryDTO> byMerchant = expenseRepository.sumAmountGroupedByMerchantBetweenDates(startDate, endDate)
+                .stream()
+                .map(row -> new MerchantSummaryDTO((String) row[0], (BigDecimal) row[1]))
                 .collect(Collectors.toList());
 
         return ExpenseSummaryDTO.builder()
                 .totalSpend(total)
                 .totalExpenses(expenses.size())
                 .byCategory(byCategory)
-                .byMerchant(List.of())
+                .byMerchant(byMerchant)
                 .build();
     }
 
@@ -186,7 +191,7 @@ public class ExpenseService {
 
     private ExpenseEntity mapParsedToExpense(GeminiParsedExpense parsed, String fileName) {
         return ExpenseEntity.builder()
-                .merchantName(parsed.getMerchantName() != null ? normalize(parsed.getMerchantName()) : "unknown")
+                .merchantName(parsed.getMerchantName() != null ? normalize(parsed.getMerchantName()) : "Unknown Merchant")
                 .category(normalize(parsed.getCategory()))
                 .totalAmount(parsed.getTotalAmount() != null ? parsed.getTotalAmount() : BigDecimal.ZERO)
                 .taxAmount(parsed.getTaxAmount())
