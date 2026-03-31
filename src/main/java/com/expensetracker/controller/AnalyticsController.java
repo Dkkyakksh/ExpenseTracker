@@ -19,8 +19,9 @@ public class AnalyticsController {
 
     // GET /api/analytics/savings-progress
     @GetMapping("/savings-progress")
-    public ResponseEntity<ApiResponse<SavingsProgressDTO>> getSavingsProgress() {
-        return ResponseEntity.ok(ApiResponse.ok(budgetService.getSavingsProgress()));
+    public ResponseEntity<ApiResponse<SavingsProgressDTO>> getSavingsProgress(
+            @RequestParam(defaultValue = "6") int months) {
+        return ResponseEntity.ok(ApiResponse.ok(budgetService.getSavingsProgress(months)));
     }
 
     // POST /api/analytics/budget  — set or update a month's planned salary

@@ -109,12 +109,10 @@ public class BudgetService {
     // ─── Savings Progress ─────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public SavingsProgressDTO getSavingsProgress() {
-        // Last 12 months including current
-        LocalDate twelveMonthsAgo = YearMonth.now().minusMonths(11).atDay(1);
-        List<MonthlyBudgetEntity> budgets = budgetRepository.findBudgetsSince(twelveMonthsAgo);
+    public SavingsProgressDTO getSavingsProgress(int months) {
+        LocalDate since = YearMonth.now().minusMonths(months - 1).atDay(1);
+        List<MonthlyBudgetEntity> budgets = budgetRepository.findBudgetsSince(since);
 
-        // Build a map for quick lookup
         Map<String, MonthlyBudgetEntity> budgetMap = budgets.stream()
                 .collect(Collectors.toMap(
                         b -> YearMonth.from(b.getMonth()).format(MONTH_FMT),
@@ -124,7 +122,7 @@ public class BudgetService {
         List<MonthlyBreakdownDTO> history = new ArrayList<>();
 
         // Walk through each of the last 12 months
-        for (int i = 11; i >= 0; i--) {
+        for (int i = months-1; i >= 0; i--) {
             YearMonth ym = YearMonth.now().minusMonths(i);
             String key = ym.format(MONTH_FMT);
             LocalDate start = ym.atDay(1);
