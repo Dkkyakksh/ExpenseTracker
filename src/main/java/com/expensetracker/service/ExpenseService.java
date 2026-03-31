@@ -1,6 +1,7 @@
 package com.expensetracker.service;
 
 import com.expensetracker.dto.*;
+import com.expensetracker.dto.CreateExpenseRequestDTO;
 import com.expensetracker.exception.AppExceptions.ExpenseNotFoundException;
 import com.expensetracker.entities.ExpenseEntity;
 import com.expensetracker.entities.ExpenseItemEntity;
@@ -60,6 +61,26 @@ public class ExpenseService {
         return toResponseDTO(saved);
     }
 
+    // ─── Manual Entry ─────────────────────────────────────────────────────────
+
+    @Transactional
+    public ExpenseResponseDTO createExpense(CreateExpenseRequestDTO request) {
+        ExpenseEntity expense = ExpenseEntity.builder()
+                .merchantName(normalize(request.getMerchantName()) != null ? normalize(request.getMerchantName()) : "manual")
+                .category(normalize(request.getCategory()))
+                .totalAmount(request.getTotalAmount())
+                .taxAmount(request.getTaxAmount())
+                .currency(request.getCurrency() != null ? request.getCurrency().toUpperCase() : "INR")
+                .expenseDate(request.getExpenseDate() != null ? request.getExpenseDate() : LocalDate.now())
+                .paymentMethod(normalize(request.getPaymentMethod()))
+                .notes(request.getNotes())
+                .build();
+
+        ExpenseEntity saved = expenseRepository.save(expense);
+        log.info("Manually created expense with id: {}", saved.getId());
+        return toResponseDTO(saved);
+    }
+
     // ─── CRUD Operations ──────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
@@ -80,13 +101,13 @@ public class ExpenseService {
     public ExpenseResponseDTO updateExpense(Long id, ExpenseUpdateRequestDTO request) {
         ExpenseEntity expense = findExpenseById(id);
 
-        if (request.getMerchantName() != null) expense.setMerchantName(request.getMerchantName());
-        if (request.getCategory() != null) expense.setCategory(request.getCategory());
+        if (request.getMerchantName() != null) expense.setMerchantName(normalize(request.getMerchantName()));
+        if (request.getCategory() != null) expense.setCategory(normalize(request.getCategory()));
         if (request.getTotalAmount() != null) expense.setTotalAmount(request.getTotalAmount());
         if (request.getTaxAmount() != null) expense.setTaxAmount(request.getTaxAmount());
-        if (request.getCurrency() != null) expense.setCurrency(request.getCurrency());
+        if (request.getCurrency() != null) expense.setCurrency(request.getCurrency().toUpperCase());
         if (request.getExpenseDate() != null) expense.setExpenseDate(request.getExpenseDate());
-        if (request.getPaymentMethod() != null) expense.setPaymentMethod(request.getPaymentMethod());
+        if (request.getPaymentMethod() != null) expense.setPaymentMethod(normalize(request.getPaymentMethod()));
         if (request.getNotes() != null) expense.setNotes(request.getNotes());
 
         return toResponseDTO(expenseRepository.save(expense));
@@ -165,13 +186,13 @@ public class ExpenseService {
 
     private ExpenseEntity mapParsedToExpense(GeminiParsedExpense parsed, String fileName) {
         return ExpenseEntity.builder()
-                .merchantName(parsed.getMerchantName() != null ? parsed.getMerchantName() : "Unknown Merchant")
-                .category(parsed.getCategory())
+                .merchantName(parsed.getMerchantName() != null ? normalize(parsed.getMerchantName()) : "Unknown Merchant")
+                .category(normalize(parsed.getCategory()))
                 .totalAmount(parsed.getTotalAmount() != null ? parsed.getTotalAmount() : BigDecimal.ZERO)
                 .taxAmount(parsed.getTaxAmount())
-                .currency(parsed.getCurrency() != null ? parsed.getCurrency() : "INR")
+                .currency(parsed.getCurrency() != null ? parsed.getCurrency().toUpperCase() : "INR")
                 .expenseDate(parseDate(parsed.getExpenseDate()))
-                .paymentMethod(parsed.getPaymentMethod())
+                .paymentMethod(normalize(parsed.getPaymentMethod()))
                 .rawExtractedText(parsed.getRawText())
                 .imageFileName(fileName)
                 .build();
@@ -217,5 +238,10 @@ public class ExpenseService {
     private ExpenseEntity findExpenseById(Long id) {
         return expenseRepository.findById(id)
                 .orElseThrow(() -> new ExpenseNotFoundException(id));
+    }
+
+    /** Trims and lowercases a string. Returns null if input is null. */
+    private String normalize(String value) {
+        return value != null ? value.trim().toLowerCase() : null;
     }
 }

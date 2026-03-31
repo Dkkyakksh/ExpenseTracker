@@ -1,6 +1,7 @@
 package com.expensetracker.controller;
 
 import com.expensetracker.dto.ApiResponse;
+import com.expensetracker.dto.CreateExpenseRequestDTO;
 import com.expensetracker.dto.ExpenseResponseDTO;
 import com.expensetracker.dto.ExpenseSummaryDTO;
 import com.expensetracker.dto.ExpenseUpdateRequestDTO;
@@ -13,6 +14,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,6 +29,14 @@ import java.util.List;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
+
+    @PostMapping(value="create-expense")
+    public ResponseEntity<ApiResponse<ExpenseResponseDTO>> createExpense(
+            @Validated @RequestBody CreateExpenseRequestDTO request) {
+        ExpenseResponseDTO expense = expenseService.createExpense(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Expense created successfully", expense));
+    }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ExpenseResponseDTO>> uploadReceipt(
