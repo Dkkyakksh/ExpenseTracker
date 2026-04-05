@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/analytics")
 @RequiredArgsConstructor
@@ -21,7 +23,8 @@ public class AnalyticsController {
     @GetMapping("/savings-progress")
     public ResponseEntity<ApiResponse<SavingsProgressDTO>> getSavingsProgress(
             @RequestParam(defaultValue = "6") int months) {
-        return ResponseEntity.ok(ApiResponse.ok(budgetService.getSavingsProgress(months)));
+        String requestId = UUID.randomUUID().toString();
+        return ResponseEntity.ok(ApiResponse.ok(requestId, budgetService.getSavingsProgress(months)));
     }
 
     // POST /api/analytics/budget  — set or update a month's planned salary
@@ -29,13 +32,15 @@ public class AnalyticsController {
     public ResponseEntity<ApiResponse<Void>> setMonthlyBudget(
             @Validated @RequestBody SetBudgetRequestDTO request) {
         budgetService.setMonthlyBudget(request);
-        return ResponseEntity.ok(ApiResponse.ok("Budget set successfully"));
+        String requestId = UUID.randomUUID().toString();
+        return ResponseEntity.ok(ApiResponse.ok(requestId, "Budget set successfully"));
     }
 
     // POST /api/analytics/sweep  — trigger month-end rollover manually
     @PostMapping("/sweep")
     public ResponseEntity<ApiResponse<Void>> triggerSweep() {
         budgetService.performMonthEndSweep();
-        return ResponseEntity.ok(ApiResponse.ok("Month-end sweep completed"));
+        String requestId = UUID.randomUUID().toString();
+        return ResponseEntity.ok(ApiResponse.ok(requestId, "Month-end sweep completed"));
     }
 }

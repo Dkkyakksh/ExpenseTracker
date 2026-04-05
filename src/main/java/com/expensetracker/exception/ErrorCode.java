@@ -13,9 +13,10 @@ public enum ErrorCode {
     EXPENSE_DELETE_FAILED("EXP_002", "Failed to delete expense", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // File / Upload
-    FILE_EMPTY("FILE_001", "No file provided", HttpStatus.BAD_REQUEST),
+    FILE_EMPTY("FILE_001", "file provided is empty", HttpStatus.BAD_REQUEST),
     FILE_TYPE_UNSUPPORTED("FILE_002", "Only image files are supported (jpeg, png, webp, gif)", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
     FILE_TOO_LARGE("FILE_003", "File size exceeds the 10MB limit", HttpStatus.PAYLOAD_TOO_LARGE),
+    FILES_ARRAY_EMPTY("FILE_004", "No Files provided", HttpStatus.BAD_REQUEST),
 
     // Gemini / AI parsing
     GEMINI_PARSE_FAILED("AI_001", "Failed to parse receipt with AI", HttpStatus.BAD_GATEWAY),

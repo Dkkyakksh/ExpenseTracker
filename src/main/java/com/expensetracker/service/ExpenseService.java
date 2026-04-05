@@ -8,6 +8,7 @@ import com.expensetracker.entities.ExpenseItemEntity;
 import com.expensetracker.repository.ExpenseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,8 +30,9 @@ public class ExpenseService {
 
     // ─── Image Upload & Parse ─────────────────────────────────────────────────
 
+    @Async
     @Transactional
-    public ExpenseResponseDTO uploadAndParseReceipt(MultipartFile imageFile) throws Exception {
+    public FileUploadDTO uploadAndParseReceipt(String requestId, String imageId, MultipartFile imageFile) throws Exception {
         log.info("Processing receipt image: {}", imageFile.getOriginalFilename());
 
         // 1. Call Gemini to extract data from image
