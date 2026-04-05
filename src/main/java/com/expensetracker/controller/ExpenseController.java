@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -55,13 +56,13 @@ public class ExpenseController {
             String imageId = UUID.randomUUID().toString();
 
             if (inputFile == null || inputFile.isEmpty()) {
-                results.add(new FileUploadDTO(imageId, "FAILED", ErrorCode.FILE_EMPTY.getDefaultMessage()));
+                results.add(new FileUploadDTO(imageId, "FAILED", ErrorCode.FILE_EMPTY.getDefaultMessage(), null, null, LocalDateTime.now()));
                 continue;
             }
 
             String contentType = inputFile.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                results.add(new FileUploadDTO(imageId, "FAILED", ErrorCode.FILE_TYPE_UNSUPPORTED.getDefaultMessage()));
+                results.add(new FileUploadDTO(imageId, "FAILED", ErrorCode.FILE_TYPE_UNSUPPORTED.getDefaultMessage(), null, null, LocalDateTime.now()));
                 continue;
             }
 
@@ -73,12 +74,19 @@ public class ExpenseController {
                     .build());
 
             expenseService.uploadAndParseReceipt(requestId, imageId, inputFile);
-            results.add(new FileUploadDTO(imageId, "PROCESSING", null));
+            results.add(new FileUploadDTO(imageId, "PROCESSING", null, null, null, LocalDateTime.now()));
         }
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(ApiResponse.ok(requestId, "Receipt parse request received successfully", results));
     }
+
+    @GetMapping("/upload/{requestId}/status")
+    public ResponseEntity<ApiResponse<List<FileUploadDTO>>> getUploadStatus(@PathVariable String requestId) {
+        String respId = UUID.randomUUID().toString();
+        return ResponseEntity.ok(ApiResponse.ok(respId, expenseService.getUploadStatusByRequestId(requestId)));
+    }
+
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ExpenseResponseDTO>>> getAllExpenses() {

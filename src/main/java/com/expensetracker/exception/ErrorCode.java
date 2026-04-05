@@ -17,6 +17,8 @@ public enum ErrorCode {
     FILE_TYPE_UNSUPPORTED("FILE_002", "Only image files are supported (jpeg, png, webp, gif)", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
     FILE_TOO_LARGE("FILE_003", "File size exceeds the 10MB limit", HttpStatus.PAYLOAD_TOO_LARGE),
     FILES_ARRAY_EMPTY("FILE_004", "No Files provided", HttpStatus.BAD_REQUEST),
+    IMAGE_UPLOAD_NOT_FOUND("FILE_005", "Upload record not found for the provided imageId", HttpStatus.NOT_FOUND),
+    IMAGE_ID_REQUIRED("FILE_006", "imageId is required when source is IMAGE", HttpStatus.BAD_REQUEST),
 
     // Gemini / AI parsing
     GEMINI_PARSE_FAILED("AI_001", "Failed to parse receipt with AI", HttpStatus.BAD_GATEWAY),

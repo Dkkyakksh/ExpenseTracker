@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -14,6 +15,14 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateExpenseRequestDTO {
+
+    public enum Source { MANUAL, IMAGE }
+
+    @NotNull(message = "Source is required")
+    private Source source;
+
+    // Required only when source = IMAGE
+    private String imageId;
 
     private String merchantName;
 
@@ -29,4 +38,5 @@ public class CreateExpenseRequestDTO {
     private LocalDate expenseDate;
     private String paymentMethod;
     private String notes;
+    private List<ExpenseItemDTO> items;
 }

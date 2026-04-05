@@ -14,6 +14,12 @@ public class AppExceptions {
         }
     }
 
+    public static class ImageUploadNotFoundException extends BaseException {
+        public ImageUploadNotFoundException(String imageId) {
+            super(ErrorCode.IMAGE_UPLOAD_NOT_FOUND, "No upload record found for imageId: " + imageId);
+        }
+    }
+
     public static class GeminiException extends BaseException {
         public GeminiException(ErrorCode errorCode) {
             super(errorCode);

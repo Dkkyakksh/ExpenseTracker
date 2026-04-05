@@ -1,5 +1,6 @@
 package com.expensetracker.entities;
 
+import com.expensetracker.dto.CreateExpenseRequestDTO.Source;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -54,6 +55,14 @@ public class ExpenseEntity {
     // Original image filename
     @Column
     private String imageFileName;
+
+    // Link back to receipt_uploads record (null for MANUAL entries)
+    @Column
+    private String imageId;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private Source source;
 
     @CreationTimestamp
     @Column(updatable = false)

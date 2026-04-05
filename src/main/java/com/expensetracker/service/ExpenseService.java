@@ -3,10 +3,14 @@ package com.expensetracker.service;
 import com.expensetracker.dto.*;
 import com.expensetracker.dto.CreateExpenseRequestDTO;
 import com.expensetracker.exception.AppExceptions.ExpenseNotFoundException;
+import com.expensetracker.exception.AppExceptions.FileValidationException;
+import com.expensetracker.exception.AppExceptions.ImageUploadNotFoundException;
+import com.expensetracker.exception.ErrorCode;
 import com.expensetracker.entities.ExpenseEntity;
 import com.expensetracker.entities.ExpenseItemEntity;
 import com.expensetracker.entities.ReceiptUploadEntity;
 import com.expensetracker.entities.ReceiptUploadEntity.UploadStatus;
+import com.expensetracker.dto.CreateExpenseRequestDTO.Source;
 import com.expensetracker.repository.ExpenseRepository;
 import com.expensetracker.repository.ReceiptUploadRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -65,6 +69,32 @@ public class ExpenseService {
         }
     }
 
+    // ─── Polling ──────────────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<FileUploadDTO> getUploadStatusByRequestId(String requestId) {
+        return receiptUploadRepository.findByRequestId(requestId).stream()
+                .map(upload -> FileUploadDTO.builder()
+                        .imageId(upload.getImageId())
+                        .status(upload.getStatus().name())
+                        .extractedData(parseJsonBlob(upload.getExtractedData()))
+                        .correctedData(parseJsonBlob(upload.getCorrectedData()))
+                        .errorMessage(upload.getErrorMessage())
+                        .updatedAt(upload.getUpdatedAt())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private Object parseJsonBlob(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            return objectMapper.readValue(json, Object.class);
+        } catch (Exception e) {
+            log.warn("Failed to parse JSON blob: {}", e.getMessage());
+            return json;
+        }
+    }
+
     // ─── Manual Entry ─────────────────────────────────────────────────────────
 
     @Transactional
@@ -78,10 +108,44 @@ public class ExpenseService {
                 .expenseDate(request.getExpenseDate() != null ? request.getExpenseDate() : LocalDate.now())
                 .paymentMethod(normalize(request.getPaymentMethod()))
                 .notes(request.getNotes())
+                .source(request.getSource())
                 .build();
 
+        // Map line items if present
+        if (request.getItems() != null) {
+            List<ExpenseItemEntity> items = request.getItems().stream()
+                    .map(i -> ExpenseItemEntity.builder()
+                            .expense(expense)
+                            .name(i.getName())
+                            .quantity(i.getQuantity())
+                            .unitPrice(i.getUnitPrice())
+                            .totalPrice(i.getTotalPrice() != null ? i.getTotalPrice() : BigDecimal.ZERO)
+                            .build())
+                    .collect(Collectors.toList());
+            expense.getItems().addAll(items);
+        }
+
+        // If source is IMAGE, validate imageId, store corrected data, and mark upload as CONFIRMED
+        if (request.getSource() == Source.IMAGE) {
+            if (request.getImageId() == null || request.getImageId().isBlank()) {
+                throw new FileValidationException(ErrorCode.IMAGE_ID_REQUIRED);
+            }
+            expense.setImageId(request.getImageId());
+
+            ReceiptUploadEntity upload = receiptUploadRepository.findById(request.getImageId())
+                    .orElseThrow(() -> new ImageUploadNotFoundException(request.getImageId()));
+
+            try {
+                upload.setCorrectedData(objectMapper.writeValueAsString(request));
+            } catch (Exception e) {
+                log.warn("Failed to serialize corrected data for imageId: {}", request.getImageId());
+            }
+            upload.setStatus(UploadStatus.CONFIRMED);
+            receiptUploadRepository.save(upload);
+        }
+
         ExpenseEntity saved = expenseRepository.save(expense);
-        log.info("Manually created expense with id: {}", saved.getId());
+        log.info("[source: {}] Created expense with id: {}", request.getSource(), saved.getId());
         return toResponseDTO(saved);
     }
 
