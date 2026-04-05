@@ -65,8 +65,8 @@ public class GeminiService {
     /**
      * Sends an image to Gemini Vision API and parses the response into a GeminiParsedExpense.
      */
-    public GeminiParsedExpense parseReceiptImage(MultipartFile imageFile) throws Exception {
-        log.info("Sending image to Gemini API: {}", imageFile.getOriginalFilename());
+    public GeminiParsedExpense parseReceiptImage(String requestId, MultipartFile imageFile) throws Exception {
+        log.info("[requestId: {}]: Sending image to Gemini API: {}", requestId, imageFile.getOriginalFilename());
 
         String base64Image = Base64.getEncoder().encodeToString(imageFile.getBytes());
         String mimeType = resolveMimeType(imageFile.getContentType());
@@ -83,7 +83,7 @@ public class GeminiService {
                 .bodyToMono(String.class)
                 .block();
 
-        log.debug("Raw Gemini response: {}", rawResponse);
+        log.debug("requestId: {}]: Raw Gemini response: {}", requestId, rawResponse);
         return parseGeminiResponse(rawResponse);
     }
 

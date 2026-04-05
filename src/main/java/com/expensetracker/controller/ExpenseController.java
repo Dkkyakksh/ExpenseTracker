@@ -1,8 +1,11 @@
 package com.expensetracker.controller;
 
 import com.expensetracker.dto.*;
+import com.expensetracker.entities.ReceiptUploadEntity;
+import com.expensetracker.entities.ReceiptUploadEntity.UploadStatus;
 import com.expensetracker.exception.AppExceptions.FileValidationException;
 import com.expensetracker.exception.ErrorCode;
+import com.expensetracker.repository.ReceiptUploadRepository;
 import com.expensetracker.service.ExpenseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,14 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
+    private final ReceiptUploadRepository receiptUploadRepository;
 
     @PostMapping(value="create-expense")
     public ResponseEntity<ApiResponse<ExpenseResponseDTO>> createExpense(
@@ -41,31 +43,39 @@ public class ExpenseController {
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<List<FileUploadDTO>>> uploadReceipt(
-            @RequestParam("files") List<MultipartFile> inputFiles) throws Exception {
+            @RequestParam("files") List<MultipartFile> inputFiles) {
 
         String requestId = UUID.randomUUID().toString();
         if (CollectionUtils.isEmpty(inputFiles)) {
             throw new FileValidationException(ErrorCode.FILES_ARRAY_EMPTY);
         }
+
         List<FileUploadDTO> results = new ArrayList<>();
-        for (MultipartFile inputFile: inputFiles){
+        for (MultipartFile inputFile : inputFiles) {
             String imageId = UUID.randomUUID().toString();
-            if(ObjectUtils.isEmpty(inputFile)){
+
+            if (inputFile == null || inputFile.isEmpty()) {
                 results.add(new FileUploadDTO(imageId, "FAILED", ErrorCode.FILE_EMPTY.getDefaultMessage()));
                 continue;
             }
+
             String contentType = inputFile.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 results.add(new FileUploadDTO(imageId, "FAILED", ErrorCode.FILE_TYPE_UNSUPPORTED.getDefaultMessage()));
                 continue;
             }
-            try{
-                expenseService.uploadAndParseReceipt(requestId, imageId, inputFile);
-                results.add(new FileUploadDTO(imageId, "PROCESSING", null));
-            } catch (Exception e) {
-                results.add(new FileUploadDTO(imageId, "FAILED", e.getMessage()));
-            }
+
+            // Persist PROCESSING record before firing async job
+            receiptUploadRepository.save(ReceiptUploadEntity.builder()
+                    .imageId(imageId)
+                    .requestId(requestId)
+                    .status(UploadStatus.PROCESSING)
+                    .build());
+
+            expenseService.uploadAndParseReceipt(requestId, imageId, inputFile);
+            results.add(new FileUploadDTO(imageId, "PROCESSING", null));
         }
+
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(ApiResponse.ok(requestId, "Receipt parse request received successfully", results));
     }

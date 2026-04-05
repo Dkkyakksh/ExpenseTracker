@@ -5,7 +5,11 @@ import com.expensetracker.dto.CreateExpenseRequestDTO;
 import com.expensetracker.exception.AppExceptions.ExpenseNotFoundException;
 import com.expensetracker.entities.ExpenseEntity;
 import com.expensetracker.entities.ExpenseItemEntity;
+import com.expensetracker.entities.ReceiptUploadEntity;
+import com.expensetracker.entities.ReceiptUploadEntity.UploadStatus;
 import com.expensetracker.repository.ExpenseRepository;
+import com.expensetracker.repository.ReceiptUploadRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -26,41 +30,39 @@ import java.util.stream.Collectors;
 public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
+    private final ReceiptUploadRepository receiptUploadRepository;
     private final GeminiService geminiService;
+    private final ObjectMapper objectMapper;
 
     // ─── Image Upload & Parse ─────────────────────────────────────────────────
 
     @Async
-    @Transactional
-    public FileUploadDTO uploadAndParseReceipt(String requestId, String imageId, MultipartFile imageFile) throws Exception {
-        log.info("Processing receipt image: {}", imageFile.getOriginalFilename());
+    public void uploadAndParseReceipt(String requestId, String imageId, MultipartFile imageFile) {
+        log.info("[requestId: {}] Processing receipt image: {}", requestId, imageFile.getOriginalFilename());
+        try {
+            // 1. Call Gemini
+            GeminiParsedExpense parsed = geminiService.parseReceiptImage(requestId, imageFile);
+            log.info("[requestId: {}] Gemini parsed merchant: {}, total: {}", requestId, parsed.getMerchantName(), parsed.getTotalAmount());
 
-        // 1. Call Gemini to extract data from image
-        GeminiParsedExpense parsed = geminiService.parseReceiptImage(imageFile);
-        log.info("Gemini parsed merchant: {}, total: {}", parsed.getMerchantName(), parsed.getTotalAmount());
+            // 2. Stringify parsed data as JSON blob
+            String extractedJson = objectMapper.writeValueAsString(parsed);
 
-        // 2. Map parsed data to Expense entity
-        ExpenseEntity expense = mapParsedToExpense(parsed, imageFile.getOriginalFilename());
+            // 3. Update upload record to COMPLETED with extracted data
+            ReceiptUploadEntity upload = receiptUploadRepository.findById(imageId)
+                    .orElseThrow(() -> new IllegalStateException("Upload record not found for imageId: " + imageId));
+            upload.setStatus(UploadStatus.COMPLETED);
+            upload.setExtractedData(extractedJson);
+            receiptUploadRepository.save(upload);
 
-        // 3. Map line items
-        if (parsed.getItems() != null) {
-            List<ExpenseItemEntity> items = parsed.getItems().stream()
-                    .map(i -> ExpenseItemEntity.builder()
-                            .expense(expense)
-                            .name(i.getName())
-                            .quantity(i.getQuantity())
-                            .unitPrice(i.getUnitPrice())
-                            .totalPrice(i.getTotalPrice() != null ? i.getTotalPrice() : BigDecimal.ZERO)
-                            .build())
-                    .collect(Collectors.toList());
-            expense.getItems().addAll(items);
+            log.info("[requestId: {}] imageId: {} marked COMPLETED", requestId, imageId);
+        } catch (Exception e) {
+            log.error("[requestId: {}] Failed to process imageId: {}: {}", requestId, imageId, e.getMessage());
+            receiptUploadRepository.findById(imageId).ifPresent(upload -> {
+                upload.setStatus(UploadStatus.FAILED);
+                upload.setErrorMessage(e.getMessage());
+                receiptUploadRepository.save(upload);
+            });
         }
-
-        // 4. Save to database
-        ExpenseEntity saved = expenseRepository.save(expense);
-        log.info("Saved expense with id: {}", saved.getId());
-
-        return toResponseDTO(saved);
     }
 
     // ─── Manual Entry ─────────────────────────────────────────────────────────
